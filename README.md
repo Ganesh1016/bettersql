@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SQL Playground
 
-## Getting Started
+Local-first SQL Playground built with Next.js App Router and Server Actions.
 
-First, run the development server:
+## Quick Start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Modes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. `WASM` mode (in-browser SQLite via `sql.js`)
+2. `File` mode (local SQLite file via `better-sqlite3` Server Actions)
 
-## Learn More
+## Seed Data
 
-To learn more about Next.js, take a look at the following resources:
+Seed SQL scripts are in `seeds/`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `seeds/ecommerce.sql`
+- `seeds/hr.sql`
+- `seeds/movies.sql`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Load them manually by pasting into the editor or importing `.sql` in WASM mode.
 
-## Deploy on Vercel
+## File Mode Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- File mode requires an absolute path.
+- Browsers do not expose full paths from file pickers; type the full path manually.
+- `Create new .db` creates a database file on disk from the supplied absolute path.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Local-Only Safety
+
+This app is intended for local development only.
+
+- Do not deploy this app to a public server.
+- Server Actions can read/write local SQLite files by absolute path.
+
+## Contributing
+
+1. Fork and clone.
+2. Run `npm install`.
+3. Run `npm run dev`.
+4. Submit a PR.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
