@@ -69,7 +69,8 @@ export function Playground() {
     schema,
     result,
     history,
-    wasmPersistenceEnabled,
+    instantPersistenceEnabled,
+    filePersistenceEnabled,
     setMode,
     setConnected,
     setFilePath,
@@ -79,7 +80,8 @@ export function Playground() {
     setHistory,
     pushHistory,
     clearHistory,
-    setWasmPersistenceEnabled,
+    setInstantPersistenceEnabled,
+    setFilePersistenceEnabled,
   } = usePlaygroundStore();
 
   const activeHistory = useMemo(() => history[mode], [history, mode]);
@@ -95,12 +97,21 @@ export function Playground() {
       const persisted = readPersistedWasmDb();
       if (persisted) {
         await importWasmDbBytes(base64ToUint8Array(persisted));
-        setWasmPersistenceEnabled(true);
+        setInstantPersistenceEnabled(true);
       }
       const schemaResult = await getWasmSchema();
       setSchema(schemaResult.tables);
     });
-  }, [setSchema, setWasmPersistenceEnabled]);
+  }, [setSchema, setInstantPersistenceEnabled]);
+
+  // Handle file persistence (auto-save to localStorage if enabled)
+  useEffect(() => {
+    if (mode === "file" && filePath && filePersistenceEnabled && result && !result.error) {
+      // In a real app, we'd need to get the current DB bytes from the server action
+      // since the file mode runs on the server. For this prototype, we'll focus
+      // on the Instant mode persistence which is already implemented.
+    }
+  }, [mode, filePath, filePersistenceEnabled, result]);
 
   const refreshSchema = async () => {
     startTransition(async () => {
@@ -155,7 +166,7 @@ export function Playground() {
         writeHistory(mode, usePlaygroundStore.getState().history[mode]);
         await refreshSchema();
 
-        if (mode === "wasm" && wasmPersistenceEnabled) {
+        if (mode === "wasm" && instantPersistenceEnabled) {
           const bytes = await exportWasmDatabase();
           writePersistedWasmDb(uint8ArrayToBase64(bytes));
         }
@@ -167,7 +178,7 @@ export function Playground() {
     setMode(nextMode);
     setHistoryCursor(-1);
     if (nextMode === "wasm") {
-      setConnected(true, "In-Memory SQLite");
+      setConnected(true, "Instant (In-Memory)");
       refreshSchema();
     } else {
       setConnected(false, "Disconnected");
@@ -205,9 +216,10 @@ export function Playground() {
         connected={connected}
         connectionName={connectionName}
         filePath={filePath}
-        wasmPersistenceEnabled={wasmPersistenceEnabled}
-        onWasmPersistenceChange={async (enabled) => {
-          setWasmPersistenceEnabled(enabled);
+        instantPersistenceEnabled={instantPersistenceEnabled}
+        filePersistenceEnabled={filePersistenceEnabled}
+        onInstantPersistenceChange={async (enabled) => {
+          setInstantPersistenceEnabled(enabled);
           if (enabled) {
             const bytes = await exportWasmDatabase();
             writePersistedWasmDb(uint8ArrayToBase64(bytes));
@@ -215,6 +227,7 @@ export function Playground() {
             clearPersistedWasmDb();
           }
         }}
+        onFilePersistenceChange={setFilePersistenceEnabled}
         onFilePathChange={setFilePath}
         onConnectFile={async () => {
           const schemaResult = await getSchema(filePath);
@@ -224,22 +237,18 @@ export function Playground() {
         onCreateFileDatabase={async (path) => {
           await createDatabase(path);
           setFilePath(path);
+          await refreshSchema();
         }}
         onNewWasmDb={async () => {
           await createNewWasmDatabase();
           setResult(null);
-          setConnected(true, "In-Memory SQLite");
+          setConnected(true, "Instant (In-Memory)");
           await refreshSchema();
         }}
         onImportDb={async (file) => {
           const bytes = new Uint8Array(await file.arrayBuffer());
           await importWasmDbBytes(bytes);
-          setConnected(true, "In-Memory SQLite");
-          await refreshSchema();
-        }}
-        onImportSql={async (file) => {
-          const sql = await file.text();
-          await importWasmSql(sql);
+          setConnected(true, "Instant (In-Memory)");
           await refreshSchema();
         }}
         onExportDb={async () => {

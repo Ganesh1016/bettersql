@@ -20,7 +20,8 @@ type PlaygroundState = {
   schema: SchemaTable[];
   result: QueryResult | null;
   history: Record<PlaygroundMode, QueryHistoryEntry[]>;
-  wasmPersistenceEnabled: boolean;
+  instantPersistenceEnabled: boolean;
+  filePersistenceEnabled: boolean;
   setMode: (mode: PlaygroundMode) => void;
   setConnected: (connected: boolean, connectionName?: string) => void;
   setFilePath: (path: string) => void;
@@ -30,26 +31,28 @@ type PlaygroundState = {
   setHistory: (mode: PlaygroundMode, items: QueryHistoryEntry[]) => void;
   pushHistory: (mode: PlaygroundMode, item: QueryHistoryEntry) => void;
   clearHistory: (mode: PlaygroundMode) => void;
-  setWasmPersistenceEnabled: (enabled: boolean) => void;
+  setInstantPersistenceEnabled: (enabled: boolean) => void;
+  setFilePersistenceEnabled: (enabled: boolean) => void;
 };
 
 export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   mode: "wasm",
   connected: true,
-  connectionName: "In-Memory SQLite",
+  connectionName: "Instant (In-Memory)",
   filePath: "",
   query: "",
   schema: [],
   result: null,
   history: { wasm: [], file: [] },
-  wasmPersistenceEnabled: false,
+  instantPersistenceEnabled: false,
+  filePersistenceEnabled: false,
   setMode: (mode) =>
     set((state) => ({
       mode,
       connected: mode === "wasm" ? true : state.connected,
       connectionName:
         mode === "wasm"
-          ? "In-Memory SQLite"
+          ? "Instant (In-Memory)"
           : state.connectionName || "Disconnected",
       result: null,
       schema: [],
@@ -77,6 +80,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     })),
   clearHistory: (mode) =>
     set((state) => ({ history: { ...state.history, [mode]: [] } })),
-  setWasmPersistenceEnabled: (enabled) =>
-    set({ wasmPersistenceEnabled: enabled }),
+  setInstantPersistenceEnabled: (enabled) =>
+    set({ instantPersistenceEnabled: enabled }),
+  setFilePersistenceEnabled: (enabled) =>
+    set({ filePersistenceEnabled: enabled }),
 }));

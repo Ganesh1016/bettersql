@@ -4,8 +4,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SQL Playground",
-  description: "Local-first SQL Playground with SQLite WASM and file mode",
+  title: "BetterSQL - Local-first SQL Playground",
+  description: "Zero-config SQL Playground with Instant (In-Memory) and Local File modes",
 };
 
 export default function RootLayout({

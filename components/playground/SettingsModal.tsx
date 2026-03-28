@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, FileUp, RefreshCcw, Settings, Upload } from "lucide-react";
+import { Download, RefreshCcw, Settings, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,38 +22,37 @@ import type { PlaygroundMode } from "@/lib/types";
 type SettingsModalProps = {
   mode: PlaygroundMode;
   filePath: string;
-  wasmPersistenceEnabled: boolean;
+  instantPersistenceEnabled: boolean;
+  filePersistenceEnabled: boolean;
   onModeChange: (mode: PlaygroundMode) => void;
-  onWasmPersistenceChange: (enabled: boolean) => void;
+  onInstantPersistenceChange: (enabled: boolean) => void;
+  onFilePersistenceChange: (enabled: boolean) => void;
   onFilePathChange: (filePath: string) => void;
   onConnectFile: () => Promise<void>;
   onCreateFileDatabase: (path: string) => Promise<void>;
   onNewWasmDb: () => Promise<void>;
   onImportDb: (file: File) => Promise<void>;
-  onImportSql: (file: File) => Promise<void>;
   onExportDb: () => Promise<void>;
 };
 
 export function SettingsModal({
   mode,
   filePath,
-  wasmPersistenceEnabled,
+  instantPersistenceEnabled,
+  filePersistenceEnabled,
   onModeChange,
-  onWasmPersistenceChange,
+  onInstantPersistenceChange,
+  onFilePersistenceChange,
   onFilePathChange,
   onConnectFile,
   onCreateFileDatabase,
   onNewWasmDb,
   onImportDb,
-  onImportSql,
   onExportDb,
 }: SettingsModalProps) {
   const dbPickerRef = useRef<HTMLInputElement | null>(null);
-  const sqlPickerRef = useRef<HTMLInputElement | null>(null);
-  const hintPickerRef = useRef<HTMLInputElement | null>(null);
   const filePickerRef = useRef<HTMLInputElement | null>(null);
   const [newDbPath, setNewDbPath] = useState("");
-  const [pickedFileHint, setPickedFileHint] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
@@ -78,7 +77,7 @@ export function SettingsModal({
             <Tabs value={mode} onValueChange={(value) => onModeChange(value as PlaygroundMode)}>
               <TabsList className="w-full">
                 <TabsTrigger value="wasm" className="flex-1">
-                  WASM
+                  Instant
                 </TabsTrigger>
                 <TabsTrigger value="file" className="flex-1">
                   File
@@ -87,26 +86,26 @@ export function SettingsModal({
             </Tabs>
             <p className="text-xs text-muted-foreground">
               {mode === "wasm"
-                ? "In-memory SQLite database"
-                : "SQLite database file on disk"}
+                ? "In-memory SQLite database (zero installation)"
+                : "SQLite database file on your local disk"}
             </p>
           </div>
 
           <Separator />
 
-          {/* WASM Configuration */}
+          {/* Instant Configuration */}
           {mode === "wasm" && (
             <div className="space-y-3">
-              <Label className="text-sm font-medium">WASM Database</Label>
+              <Label className="text-sm font-medium">Instant Database</Label>
               <div className="flex flex-col gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={onNewWasmDb}
-                  className="w-full justify-start"
+                  className="w-full justify-start text-destructive hover:text-destructive"
                 >
                   <RefreshCcw className="mr-2 h-4 w-4" />
-                  New Database
+                  Clear Database
                 </Button>
                 <Button
                   size="sm"
@@ -120,15 +119,6 @@ export function SettingsModal({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => sqlPickerRef.current?.click()}
-                  className="w-full justify-start"
-                >
-                  <FileUp className="mr-2 h-4 w-4" />
-                  Import .sql
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
                   onClick={onExportDb}
                   className="w-full justify-start"
                 >
@@ -137,24 +127,22 @@ export function SettingsModal({
                 </Button>
               </div>
 
-              <Separator />
-
-              <div className="space-y-3">
+              <div className="pt-2">
                 <div className="flex items-center justify-between">
                   <Label
-                    htmlFor="persist-toggle"
+                    htmlFor="persist-instant-toggle"
                     className="text-sm font-medium"
                   >
-                    Persist to Storage
+                    Persist in Browser
                   </Label>
                   <Switch
-                    id="persist-toggle"
-                    checked={wasmPersistenceEnabled}
-                    onCheckedChange={onWasmPersistenceChange}
+                    id="persist-instant-toggle"
+                    checked={instantPersistenceEnabled}
+                    onCheckedChange={onInstantPersistenceChange}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Save database to browser localStorage. Limited by browser quotas.
+                <p className="text-xs text-muted-foreground mt-1">
+                  Save state to browser storage between sessions.
                 </p>
               </div>
             </div>
@@ -165,59 +153,80 @@ export function SettingsModal({
             <div className="space-y-3">
               <Label className="text-sm font-medium">Database File</Label>
               <div className="space-y-2">
-                <Input
-                  placeholder="Database file path"
-                  value={filePath}
-                  onChange={(e) => onFilePathChange(e.target.value)}
-                  className="text-xs"
-                />
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onConnectFile}
-                    className="flex-1"
-                  >
-                    Connect
-                  </Button>
+                  <Input
+                    placeholder="Database file path"
+                    value={filePath}
+                    onChange={(e) => onFilePathChange(e.target.value)}
+                    className="text-xs"
+                  />
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => filePickerRef.current?.click()}
-                    className="flex-1"
                   >
                     Browse
                   </Button>
                 </div>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={onConnectFile}
+                  disabled={!filePath}
+                >
+                  Connect
+                </Button>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="persist-file-toggle"
+                    className="text-sm font-medium"
+                  >
+                    Remember Changes in Browser
+                  </Label>
+                  <Switch
+                    id="persist-file-toggle"
+                    checked={filePersistenceEnabled}
+                    onCheckedChange={onFilePersistenceChange}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  If enabled, your changes will be cached in the browser for this file.
+                </p>
               </div>
 
               <Separator />
 
               <div className="space-y-2">
-                <Label htmlFor="new-db-path" className="text-sm font-medium">
+                <Label htmlFor="new-db-path" className="text-sm font-medium text-muted-foreground">
                   Create New Database
                 </Label>
-                <Input
-                  id="new-db-path"
-                  placeholder="/path/to/database.db"
-                  value={newDbPath}
-                  onChange={(e) => setNewDbPath(e.target.value)}
-                  className="text-xs"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    if (newDbPath) {
-                      onCreateFileDatabase(newDbPath).then(() => {
-                        setNewDbPath("");
-                      });
-                    }
-                  }}
-                  className="w-full"
-                >
-                  Create Database
-                </Button>
+                <div className="flex gap-2">
+                  <Input
+                    id="new-db-path"
+                    placeholder="/path/to/database.db"
+                    value={newDbPath}
+                    onChange={(e) => setNewDbPath(e.target.value)}
+                    className="text-xs"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (newDbPath) {
+                        onCreateFileDatabase(newDbPath).then(() => {
+                          setNewDbPath("");
+                        });
+                      }
+                    }}
+                  >
+                    Create
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -235,16 +244,6 @@ export function SettingsModal({
           className="hidden"
         />
         <input
-          ref={sqlPickerRef}
-          type="file"
-          accept=".sql"
-          onChange={(e) => {
-            const file = e.currentTarget.files?.[0];
-            if (file) onImportSql(file);
-          }}
-          className="hidden"
-        />
-        <input
           ref={filePickerRef}
           type="file"
           accept=".db,.sqlite,.sqlite3"
@@ -252,7 +251,6 @@ export function SettingsModal({
             const file = e.currentTarget.files?.[0];
             if (file) {
               onFilePathChange(file.name);
-              setPickedFileHint(file.name);
             }
           }}
           className="hidden"
