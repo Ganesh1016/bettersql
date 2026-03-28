@@ -38,7 +38,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   connected: true,
   connectionName: "In-Memory SQLite",
   filePath: "",
-  query: "SELECT sqlite_version() AS version;",
+  query: "",
   schema: [],
   result: null,
   history: { wasm: [], file: [] },
@@ -77,6 +77,6 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     })),
   clearHistory: (mode) =>
     set((state) => ({ history: { ...state.history, [mode]: [] } })),
-  setWasmPersistenceEnabled: (enabled) => set({ wasmPersistenceEnabled: enabled }),
+  setWasmPersistenceEnabled: (enabled) =>
+    set({ wasmPersistenceEnabled: enabled }),
 }));
-

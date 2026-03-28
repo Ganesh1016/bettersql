@@ -189,7 +189,7 @@ export function Playground() {
         connectionName={connectionName}
       />
       <PanelGroup orientation="horizontal" className="flex-1">
-        <Panel defaultSize={25} minSize={16} maxSize={35}>
+        <Panel defaultSize="23%" minSize="260px" maxSize="420px">
           <div className="flex h-full flex-col border-r border-border bg-background/60 p-2">
             <ConnectionPanel
               mode={mode}
@@ -250,8 +250,11 @@ export function Playground() {
             />
             <UISeparator className="my-2" />
             <div className="min-h-0 flex-1">
-              <PanelGroup orientation="vertical">
-                <Panel defaultSize={60} minSize={25}>
+              <PanelGroup
+                orientation="vertical"
+                resizeTargetMinimumSize={{ coarse: 24, fine: 12 }}
+              >
+                <Panel defaultSize="60%" minSize="180px">
                   <div className="h-full rounded-md border border-border shadow-sm">
                     <SchemaExplorer
                       tables={schema}
@@ -264,8 +267,10 @@ export function Playground() {
                     />
                   </div>
                 </Panel>
-                <PanelResizeHandle className="h-2 bg-border/60" />
-                <Panel defaultSize={40} minSize={20}>
+                <PanelResizeHandle className="group relative h-2 cursor-row-resize bg-border/70">
+                  <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-muted-foreground/40 group-hover:bg-muted-foreground/70" />
+                </PanelResizeHandle>
+                <Panel defaultSize="40%" minSize="120px">
                   <QueryHistory
                     entries={activeHistory}
                     onLoad={(sql) => setQuery(sql)}
@@ -279,10 +284,15 @@ export function Playground() {
             </div>
           </div>
         </Panel>
-        <PanelResizeHandle className="w-2 bg-border/60" />
-        <Panel defaultSize={75} minSize={65}>
-          <PanelGroup orientation="vertical">
-            <Panel defaultSize={58} minSize={35}>
+        <PanelResizeHandle className="group relative w-2 cursor-col-resize bg-border/70">
+          <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-muted-foreground/40 group-hover:bg-muted-foreground/70" />
+        </PanelResizeHandle>
+        <Panel defaultSize="77%" minSize="540px">
+          <PanelGroup
+            orientation="vertical"
+            resizeTargetMinimumSize={{ coarse: 24, fine: 12 }}
+          >
+            <Panel defaultSize="58%" minSize="260px">
               <div className="flex h-full flex-col p-2 pb-1">
                 <div className="mb-2 flex items-center gap-2">
                   <Button size="sm" onClick={executeQuery} disabled={isPending}>
@@ -309,8 +319,10 @@ export function Playground() {
                 </div>
               </div>
             </Panel>
-            <PanelResizeHandle className="h-2 bg-border/60" />
-            <Panel defaultSize={42} minSize={20}>
+            <PanelResizeHandle className="group relative h-2 cursor-row-resize bg-border/70">
+              <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-muted-foreground/40 group-hover:bg-muted-foreground/70" />
+            </PanelResizeHandle>
+            <Panel defaultSize="42%" minSize="200px">
               <div className="h-full p-2 pt-1">
                 <ResultsPanel result={result} />
               </div>
