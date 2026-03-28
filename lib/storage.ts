@@ -1,7 +1,8 @@
 import type { QueryHistoryEntry } from "@/store";
 
 const HISTORY_KEY_PREFIX = "sql-playground-history";
-const WASM_PERSIST_KEY = "sql-playground-wasm-db";
+const INSTANT_PERSIST_KEY = "sql-playground-instant-db";
+const FILE_PERSIST_KEY_PREFIX = "sql-playground-file-db";
 
 function isBrowser() {
   return typeof window !== "undefined";
@@ -29,16 +30,30 @@ export function writeHistory(mode: "wasm" | "file", entries: QueryHistoryEntry[]
 
 export function writePersistedWasmDb(base64: string) {
   if (!isBrowser()) return;
-  window.localStorage.setItem(WASM_PERSIST_KEY, base64);
+  window.localStorage.setItem(INSTANT_PERSIST_KEY, base64);
 }
 
 export function readPersistedWasmDb() {
   if (!isBrowser()) return null;
-  return window.localStorage.getItem(WASM_PERSIST_KEY);
+  return window.localStorage.getItem(INSTANT_PERSIST_KEY);
 }
 
 export function clearPersistedWasmDb() {
   if (!isBrowser()) return;
-  window.localStorage.removeItem(WASM_PERSIST_KEY);
+  window.localStorage.removeItem(INSTANT_PERSIST_KEY);
 }
 
+export function writePersistedFileDb(filePath: string, base64: string) {
+  if (!isBrowser()) return;
+  window.localStorage.setItem(`${FILE_PERSIST_KEY_PREFIX}:${filePath}`, base64);
+}
+
+export function readPersistedFileDb(filePath: string) {
+  if (!isBrowser()) return null;
+  return window.localStorage.getItem(`${FILE_PERSIST_KEY_PREFIX}:${filePath}`);
+}
+
+export function clearPersistedFileDb(filePath: string) {
+  if (!isBrowser()) return;
+  window.localStorage.removeItem(`${FILE_PERSIST_KEY_PREFIX}:${filePath}`);
+}
