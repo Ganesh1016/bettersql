@@ -12,7 +12,10 @@ type EditorProps = {
   onRun: () => void;
   onFormat: () => void;
   onHistoryCycle: () => void;
-  onReady: (api: { insertAtCursor: (text: string) => void }) => void;
+  onReady: (api: {
+    insertAtCursor: (text: string) => void;
+    getSelection: () => string | null;
+  }) => void;
 };
 
 export function Editor({
@@ -67,6 +70,11 @@ export function Editor({
         if (!selection) return;
         instance.executeEdits("schema-insert", [{ range: selection, text }]);
         instance.focus();
+      },
+      getSelection: () => {
+        const selection = instance.getSelection();
+        if (!selection || selection.isEmpty()) return null;
+        return instance.getModel()?.getValueInRange(selection) ?? null;
       },
     });
   };

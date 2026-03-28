@@ -8,16 +8,20 @@ import {
 } from "react-resizable-panels";
 
 import { createDatabase, getSchema, runQuery } from "@/actions/sqlite";
-import { ConnectionPanel } from "@/components/playground/ConnectionPanel";
 import { Editor } from "@/components/playground/Editor";
 import { Header } from "@/components/playground/Header";
 import { QueryHistory } from "@/components/playground/QueryHistory";
 import { ResultsPanel } from "@/components/playground/ResultsPanel";
 import { SchemaExplorer } from "@/components/playground/SchemaExplorer";
 import { Button } from "@/components/ui/button";
-import { Separator as UISeparator } from "@/components/ui/separator";
 import { formatSql } from "@/lib/formatter";
-import { clearPersistedWasmDb, readHistory, readPersistedWasmDb, writeHistory, writePersistedWasmDb } from "@/lib/storage";
+import {
+  clearPersistedWasmDb,
+  readHistory,
+  readPersistedWasmDb,
+  writeHistory,
+  writePersistedWasmDb,
+} from "@/lib/storage";
 import type { PlaygroundMode } from "@/lib/types";
 import {
   createNewWasmDatabase,
@@ -51,7 +55,10 @@ export function Playground() {
   const [isPending, startTransition] = useTransition();
   const [schemaCollapsed, setSchemaCollapsed] = useState(false);
   const [, setHistoryCursor] = useState(-1);
-  const editorApiRef = useRef<{ insertAtCursor: (text: string) => void } | null>(null);
+  const editorApiRef = useRef<{
+    insertAtCursor: (text: string) => void;
+    getSelection: () => string | null;
+  } | null>(null);
 
   const {
     mode,
@@ -119,25 +126,29 @@ export function Playground() {
           columns: [],
           rowCount: 0,
           duration_ms: 0,
-          error: error instanceof Error ? error.message : "Failed to load schema",
+          error:
+            error instanceof Error ? error.message : "Failed to load schema",
         });
       }
     });
   };
 
   const executeQuery = () => {
-    const sql = query.trim();
+    const selection = editorApiRef.current?.getSelection();
+    const sql = (selection || query).trim();
     if (!sql) return;
 
     startTransition(async () => {
       const queryResult =
-        mode === "wasm" ? await runWasmQuery(query) : await runQuery(filePath, query);
+        mode === "wasm"
+          ? await runWasmQuery(sql)
+          : await runQuery(filePath, sql);
       setResult(queryResult);
 
       if (!queryResult.error) {
         pushHistory(mode, {
           id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          sql: query,
+          sql,
           timestamp: Date.now(),
           rowCount: queryResult.rowCount,
         });
@@ -164,8 +175,14 @@ export function Playground() {
   };
 
   const handleFormat = () => {
+    const selection = editorApiRef.current?.getSelection();
     try {
-      setQuery(formatSql(query));
+      if (selection) {
+        const formatted = formatSql(selection);
+        editorApiRef.current?.insertAtCursor(formatted);
+      } else {
+        setQuery(formatSql(query));
+      }
     } catch {
       // Keep the original SQL when formatting fails.
     }
@@ -187,68 +204,64 @@ export function Playground() {
         onModeChange={handleModeChange}
         connected={connected}
         connectionName={connectionName}
+        filePath={filePath}
+        wasmPersistenceEnabled={wasmPersistenceEnabled}
+        onWasmPersistenceChange={async (enabled) => {
+          setWasmPersistenceEnabled(enabled);
+          if (enabled) {
+            const bytes = await exportWasmDatabase();
+            writePersistedWasmDb(uint8ArrayToBase64(bytes));
+          } else {
+            clearPersistedWasmDb();
+          }
+        }}
+        onFilePathChange={setFilePath}
+        onConnectFile={async () => {
+          const schemaResult = await getSchema(filePath);
+          setConnected(true, filePath);
+          setSchema(schemaResult.tables);
+        }}
+        onCreateFileDatabase={async (path) => {
+          await createDatabase(path);
+          setFilePath(path);
+        }}
+        onNewWasmDb={async () => {
+          await createNewWasmDatabase();
+          setResult(null);
+          setConnected(true, "In-Memory SQLite");
+          await refreshSchema();
+        }}
+        onImportDb={async (file) => {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          await importWasmDbBytes(bytes);
+          setConnected(true, "In-Memory SQLite");
+          await refreshSchema();
+        }}
+        onImportSql={async (file) => {
+          const sql = await file.text();
+          await importWasmSql(sql);
+          await refreshSchema();
+        }}
+        onExportDb={async () => {
+          const bytes = await exportWasmDatabase();
+          const arrayBuffer = bytes.buffer.slice(
+            bytes.byteOffset,
+            bytes.byteOffset + bytes.byteLength,
+          ) as ArrayBuffer;
+          const blob = new Blob([arrayBuffer], {
+            type: "application/octet-stream",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "playground.db";
+          a.click();
+          URL.revokeObjectURL(url);
+        }}
       />
       <PanelGroup orientation="horizontal" className="flex-1">
         <Panel defaultSize="23%" minSize="260px" maxSize="420px">
           <div className="flex h-full flex-col border-r border-border bg-background/60 p-2">
-            <ConnectionPanel
-              mode={mode}
-              filePath={filePath}
-              wasmPersistenceEnabled={wasmPersistenceEnabled}
-              onWasmPersistenceChange={async (enabled) => {
-                setWasmPersistenceEnabled(enabled);
-                if (enabled) {
-                  const bytes = await exportWasmDatabase();
-                  writePersistedWasmDb(uint8ArrayToBase64(bytes));
-                } else {
-                  clearPersistedWasmDb();
-                }
-              }}
-              onFilePathChange={setFilePath}
-              onConnectFile={async () => {
-                const schemaResult = await getSchema(filePath);
-                setConnected(true, filePath);
-                setSchema(schemaResult.tables);
-              }}
-              onCreateFileDatabase={async (path) => {
-                await createDatabase(path);
-                setFilePath(path);
-              }}
-              onNewWasmDb={async () => {
-                await createNewWasmDatabase();
-                setResult(null);
-                setConnected(true, "In-Memory SQLite");
-                await refreshSchema();
-              }}
-              onImportDb={async (file) => {
-                const bytes = new Uint8Array(await file.arrayBuffer());
-                await importWasmDbBytes(bytes);
-                setConnected(true, "In-Memory SQLite");
-                await refreshSchema();
-              }}
-              onImportSql={async (file) => {
-                const sql = await file.text();
-                await importWasmSql(sql);
-                await refreshSchema();
-              }}
-              onExportDb={async () => {
-                const bytes = await exportWasmDatabase();
-                const arrayBuffer = bytes.buffer.slice(
-                  bytes.byteOffset,
-                  bytes.byteOffset + bytes.byteLength,
-                ) as ArrayBuffer;
-                const blob = new Blob([arrayBuffer], {
-                  type: "application/octet-stream",
-                });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "playground.db";
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-            />
-            <UISeparator className="my-2" />
             <div className="min-h-0 flex-1">
               <PanelGroup
                 orientation="vertical"
@@ -259,7 +272,9 @@ export function Playground() {
                     <SchemaExplorer
                       tables={schema}
                       collapsed={schemaCollapsed}
-                      onToggleCollapsed={() => setSchemaCollapsed((value) => !value)}
+                      onToggleCollapsed={() =>
+                        setSchemaCollapsed((value) => !value)
+                      }
                       onRefresh={refreshSchema}
                       onInsertText={(text) =>
                         editorApiRef.current?.insertAtCursor(`${text}`)
@@ -301,7 +316,11 @@ export function Playground() {
                   <Button size="sm" variant="outline" onClick={handleFormat}>
                     Format Ctrl/Cmd+Shift+F
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setQuery("")}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setQuery("")}
+                  >
                     Clear
                   </Button>
                 </div>
