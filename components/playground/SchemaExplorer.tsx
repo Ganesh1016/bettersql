@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, memo } from "react";
 import { ChevronDown, ChevronRight, Database, RefreshCw, Search } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ type SchemaExplorerProps = {
   onInsertText: (text: string) => void;
 };
 
-export function SchemaExplorer({
+function SchemaExplorerComponent({
   tables,
   collapsed,
   onToggleCollapsed,
@@ -132,3 +132,5 @@ export function SchemaExplorer({
     </div>
   );
 }
+
+export const SchemaExplorer = memo(SchemaExplorerComponent);

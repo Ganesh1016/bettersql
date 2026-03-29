@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, memo } from "react";
 import MonacoEditor from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import type { editor } from "monaco-editor";
@@ -18,7 +18,7 @@ type EditorProps = {
   }) => void;
 };
 
-export function Editor({
+function EditorComponent({
   value,
   onChange,
   onRun,
@@ -100,3 +100,5 @@ export function Editor({
     />
   );
 }
+
+export const Editor = memo(EditorComponent);

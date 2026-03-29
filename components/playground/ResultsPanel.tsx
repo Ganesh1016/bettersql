@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, memo } from "react";
 import { ArrowDownAZ, ArrowUpAZ, Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ function toCsv(result: QueryResult) {
   return [headers.join(","), ...rows].join("\n");
 }
 
-export function ResultsPanel({ result }: ResultsPanelProps) {
+function ResultsPanelComponent({ result }: ResultsPanelProps) {
   const [sortState, setSortState] = useState<{
     column: string;
     direction: "asc" | "desc";
@@ -201,3 +201,5 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
     </div>
   );
 }
+
+export const ResultsPanel = memo(ResultsPanelComponent);

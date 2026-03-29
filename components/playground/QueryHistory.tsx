@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Clock3, Eraser } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ function truncateSql(sql: string) {
   return `${singleLine.slice(0, 72)}...`;
 }
 
-export function QueryHistory({ entries, onLoad, onClear }: QueryHistoryProps) {
+function QueryHistoryComponent({ entries, onLoad, onClear }: QueryHistoryProps) {
   return (
     <div className="flex h-full flex-col rounded-md border border-border shadow-sm">
       <div className="flex items-center justify-between border-b border-border p-2">
@@ -52,4 +53,6 @@ export function QueryHistory({ entries, onLoad, onClear }: QueryHistoryProps) {
     </div>
   );
 }
+
+export const QueryHistory = memo(QueryHistoryComponent);
 

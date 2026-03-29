@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Group as PanelGroup,
   Panel,
@@ -144,6 +144,8 @@ export function Playground() {
     });
   };
 
+  const refreshSchemaCallback = useCallback(refreshSchema, [mode, filePath, setConnected, setSchema, setResult]);
+
   const executeQuery = () => {
     const selection = editorApiRef.current?.getSelection();
     const sql = (selection || query).trim();
@@ -164,7 +166,7 @@ export function Playground() {
           rowCount: queryResult.rowCount,
         });
         writeHistory(mode, usePlaygroundStore.getState().history[mode]);
-        await refreshSchema();
+        await refreshSchemaCallback();
 
         if (mode === "wasm" && instantPersistenceEnabled) {
           const bytes = await exportWasmDatabase();
@@ -179,7 +181,7 @@ export function Playground() {
     setHistoryCursor(-1);
     if (nextMode === "wasm") {
       setConnected(true, "Instant (In-Memory)");
-      refreshSchema();
+      refreshSchemaCallback();
     } else {
       setConnected(false, "Disconnected");
     }
@@ -199,75 +201,142 @@ export function Playground() {
     }
   };
 
-  const cycleHistory = () => {
+  const cycleHistory = useCallback(() => {
     if (activeHistory.length === 0) return;
     setHistoryCursor((cursor) => {
       const next = cursor + 1 >= activeHistory.length ? 0 : cursor + 1;
       setQuery(activeHistory[next].sql);
       return next;
     });
-  };
+  }, [activeHistory]);
+
+  // Memoized components to prevent re-renders on keystroke
+  const MemoizedHeader = useMemo(
+    () =>
+      memo(() => (
+        <Header
+          mode={mode}
+          onModeChange={handleModeChange}
+          connected={connected}
+          connectionName={connectionName}
+          filePath={filePath}
+          instantPersistenceEnabled={instantPersistenceEnabled}
+          filePersistenceEnabled={filePersistenceEnabled}
+          onInstantPersistenceChange={async (enabled) => {
+            setInstantPersistenceEnabled(enabled);
+            if (enabled) {
+              const bytes = await exportWasmDatabase();
+              writePersistedWasmDb(uint8ArrayToBase64(bytes));
+            } else {
+              clearPersistedWasmDb();
+            }
+          }}
+          onFilePersistenceChange={setFilePersistenceEnabled}
+          onFilePathChange={setFilePath}
+          onConnectFile={async () => {
+            const schemaResult = await getSchema(filePath);
+            setConnected(true, filePath);
+            setSchema(schemaResult.tables);
+          }}
+          onCreateFileDatabase={async (path) => {
+            await createDatabase(path);
+            setFilePath(path);
+            await refreshSchemaCallback();
+          }}
+          onNewWasmDb={async () => {
+            await createNewWasmDatabase();
+            setResult(null);
+            setConnected(true, "Instant (In-Memory)");
+            await refreshSchemaCallback();
+          }}
+          onImportDb={async (file) => {
+            const bytes = new Uint8Array(await file.arrayBuffer());
+            await importWasmDbBytes(bytes);
+            setConnected(true, "Instant (In-Memory)");
+            await refreshSchemaCallback();
+          }}
+          onExportDb={async () => {
+            const bytes = await exportWasmDatabase();
+            const arrayBuffer = bytes.buffer.slice(
+              bytes.byteOffset,
+              bytes.byteOffset + bytes.byteLength,
+            ) as ArrayBuffer;
+            const blob = new Blob([arrayBuffer], {
+              type: "application/octet-stream",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "playground.db";
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        />
+      )),
+    [
+      mode,
+      handleModeChange,
+      connected,
+      connectionName,
+      filePath,
+      instantPersistenceEnabled,
+      filePersistenceEnabled,
+      setInstantPersistenceEnabled,
+      setFilePersistenceEnabled,
+      setFilePath,
+      setConnected,
+      setSchema,
+      setResult,
+      refreshSchemaCallback,
+    ],
+  );
+
+  const MemoizedSchemaExplorer = useMemo(
+    () =>
+      memo(() => (
+        <div className="h-full rounded-md border border-border shadow-sm">
+          <SchemaExplorer
+            tables={schema}
+            collapsed={schemaCollapsed}
+            onToggleCollapsed={() =>
+              setSchemaCollapsed((value) => !value)
+            }
+            onRefresh={refreshSchemaCallback}
+            onInsertText={(text) =>
+              editorApiRef.current?.insertAtCursor(`${text}`)
+            }
+          />
+        </div>
+      )),
+    [schema, schemaCollapsed, refreshSchemaCallback],
+  );
+
+  const MemoizedQueryHistory = useMemo(
+    () =>
+      memo(
+        () => (
+          <QueryHistory
+            entries={activeHistory}
+            onLoad={(sql) => setQuery(sql)}
+            onClear={() => {
+              clearHistory(mode);
+              writeHistory(mode, []);
+            }}
+          />
+        ),
+        (prevProps, nextProps) => prevProps === nextProps,
+      ),
+    [activeHistory, mode],
+  );
+
+  const MemoizedResultsPanel = useMemo(
+    () => memo(() => <ResultsPanel result={result} />),
+    [result],
+  );
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      <Header
-        mode={mode}
-        onModeChange={handleModeChange}
-        connected={connected}
-        connectionName={connectionName}
-        filePath={filePath}
-        instantPersistenceEnabled={instantPersistenceEnabled}
-        filePersistenceEnabled={filePersistenceEnabled}
-        onInstantPersistenceChange={async (enabled) => {
-          setInstantPersistenceEnabled(enabled);
-          if (enabled) {
-            const bytes = await exportWasmDatabase();
-            writePersistedWasmDb(uint8ArrayToBase64(bytes));
-          } else {
-            clearPersistedWasmDb();
-          }
-        }}
-        onFilePersistenceChange={setFilePersistenceEnabled}
-        onFilePathChange={setFilePath}
-        onConnectFile={async () => {
-          const schemaResult = await getSchema(filePath);
-          setConnected(true, filePath);
-          setSchema(schemaResult.tables);
-        }}
-        onCreateFileDatabase={async (path) => {
-          await createDatabase(path);
-          setFilePath(path);
-          await refreshSchema();
-        }}
-        onNewWasmDb={async () => {
-          await createNewWasmDatabase();
-          setResult(null);
-          setConnected(true, "Instant (In-Memory)");
-          await refreshSchema();
-        }}
-        onImportDb={async (file) => {
-          const bytes = new Uint8Array(await file.arrayBuffer());
-          await importWasmDbBytes(bytes);
-          setConnected(true, "Instant (In-Memory)");
-          await refreshSchema();
-        }}
-        onExportDb={async () => {
-          const bytes = await exportWasmDatabase();
-          const arrayBuffer = bytes.buffer.slice(
-            bytes.byteOffset,
-            bytes.byteOffset + bytes.byteLength,
-          ) as ArrayBuffer;
-          const blob = new Blob([arrayBuffer], {
-            type: "application/octet-stream",
-          });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "playground.db";
-          a.click();
-          URL.revokeObjectURL(url);
-        }}
-      />
+      <MemoizedHeader />
       <PanelGroup orientation="horizontal" className="flex-1">
         <Panel defaultSize="23%" minSize="260px" maxSize="420px">
           <div className="flex h-full flex-col border-r border-border bg-background/60 p-2">
@@ -277,32 +346,13 @@ export function Playground() {
                 resizeTargetMinimumSize={{ coarse: 24, fine: 12 }}
               >
                 <Panel defaultSize="60%" minSize="180px">
-                  <div className="h-full rounded-md border border-border shadow-sm">
-                    <SchemaExplorer
-                      tables={schema}
-                      collapsed={schemaCollapsed}
-                      onToggleCollapsed={() =>
-                        setSchemaCollapsed((value) => !value)
-                      }
-                      onRefresh={refreshSchema}
-                      onInsertText={(text) =>
-                        editorApiRef.current?.insertAtCursor(`${text}`)
-                      }
-                    />
-                  </div>
+                  <MemoizedSchemaExplorer />
                 </Panel>
                 <PanelResizeHandle className="group relative h-2 cursor-row-resize bg-border/70">
                   <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-muted-foreground/40 group-hover:bg-muted-foreground/70" />
                 </PanelResizeHandle>
                 <Panel defaultSize="40%" minSize="120px">
-                  <QueryHistory
-                    entries={activeHistory}
-                    onLoad={(sql) => setQuery(sql)}
-                    onClear={() => {
-                      clearHistory(mode);
-                      writeHistory(mode, []);
-                    }}
-                  />
+                  <MemoizedQueryHistory />
                 </Panel>
               </PanelGroup>
             </div>
@@ -352,7 +402,7 @@ export function Playground() {
             </PanelResizeHandle>
             <Panel defaultSize="42%" minSize="200px">
               <div className="h-full p-2 pt-1">
-                <ResultsPanel result={result} />
+                <MemoizedResultsPanel />
               </div>
             </Panel>
           </PanelGroup>
