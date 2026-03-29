@@ -21,7 +21,9 @@ type ResultsPanelProps = {
 };
 
 function inferColumnType(values: unknown[]) {
-  const firstNonNull = values.find((value) => value !== null && value !== undefined);
+  const firstNonNull = values.find(
+    (value) => value !== null && value !== undefined,
+  );
   if (firstNonNull === undefined) return "null";
   if (typeof firstNonNull === "number") return "number";
   if (typeof firstNonNull === "boolean") return "boolean";
@@ -56,7 +58,8 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
       const left = a[sortState.column];
       const right = b[sortState.column];
       const leftText = left === null || left === undefined ? "" : String(left);
-      const rightText = right === null || right === undefined ? "" : String(right);
+      const rightText =
+        right === null || right === undefined ? "" : String(right);
       const comparison = leftText.localeCompare(rightText, undefined, {
         numeric: true,
         sensitivity: "base",
@@ -77,7 +80,9 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
   if (result.error) {
     return (
       <div className="h-full min-h-[200px] rounded-md border border-destructive/40 bg-destructive/10 p-3 shadow-sm">
-        <p className="mb-2 text-xs font-semibold text-destructive">Execution Error</p>
+        <p className="mb-2 text-xs font-semibold text-destructive">
+          Execution Error
+        </p>
         <pre className="whitespace-pre-wrap break-words font-mono text-xs text-destructive">
           {result.error}
         </pre>
@@ -141,7 +146,8 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
                           }
                           return {
                             column,
-                            direction: previous.direction === "asc" ? "desc" : "asc",
+                            direction:
+                              previous.direction === "asc" ? "desc" : "asc",
                           };
                         })
                       }
@@ -166,19 +172,21 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
           <TableBody>
             {sortedRows.map((row, index) => (
               <TableRow key={`row-${index}`}>
-                {result.columns.map((column) => {
+                {result.columns.map((column, columnIndex) => {
                   const value = row[column];
                   const numeric = typeof value === "number";
                   return (
                     <TableCell
-                      key={`${index}:${column}`}
+                      key={`${index}:${columnIndex}`}
                       className={cn(
                         "border-r border-border align-top last:border-r-0",
                         numeric ? "text-right" : "text-left",
                       )}
                     >
                       {value === null ? (
-                        <span className="italic text-muted-foreground">null</span>
+                        <span className="italic text-muted-foreground">
+                          null
+                        </span>
                       ) : (
                         String(value)
                       )}
@@ -193,4 +201,3 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
     </div>
   );
 }
-
