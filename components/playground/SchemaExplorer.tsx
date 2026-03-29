@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState, memo } from "react";
-import { ChevronDown, ChevronRight, Database, RefreshCw, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Database,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,7 +32,9 @@ function SchemaExplorerComponent({
   onInsertText,
 }: SchemaExplorerProps) {
   const [filter, setFilter] = useState("");
-  const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({});
+  const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>(
+    {},
+  );
   const filteredTables = useMemo(
     () =>
       tables.filter((table) =>
@@ -38,10 +46,20 @@ function SchemaExplorerComponent({
   if (collapsed) {
     return (
       <div className="flex h-full w-12 flex-col items-center gap-2 border-r border-border py-2">
-        <Button size="icon" variant="ghost" onClick={onToggleCollapsed} title="Expand schema">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onToggleCollapsed}
+          title="Expand schema"
+        >
           <ChevronRight className="h-4 w-4" />
         </Button>
-        <Button size="icon" variant="ghost" onClick={onRefresh} title="Refresh schema">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onRefresh}
+          title="Refresh schema"
+        >
           <RefreshCw className="h-4 w-4" />
         </Button>
         <Database className="mt-2 h-4 w-4 text-muted-foreground" />
@@ -55,10 +73,20 @@ function SchemaExplorerComponent({
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium">Schema Explorer</p>
           <div className="flex gap-1">
-            <Button size="icon" variant="ghost" onClick={onRefresh} title="Refresh schema">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onRefresh}
+              title="Refresh schema"
+            >
               <RefreshCw className="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="ghost" onClick={onToggleCollapsed} title="Collapse schema">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onToggleCollapsed}
+              title="Collapse schema"
+            >
               <ChevronDown className="h-4 w-4" />
             </Button>
           </div>
@@ -76,12 +104,17 @@ function SchemaExplorerComponent({
       <ScrollArea className="h-full">
         <div className="p-2">
           {filteredTables.map((table) => (
-            <div key={table.name} className="mb-1 rounded-md border border-border">
+            <div
+              key={table.name}
+              className="mb-1 rounded-md border border-border"
+            >
               <div className="flex items-center">
                 <button
                   type="button"
                   className="flex-1 truncate p-2 text-left text-xs hover:bg-accent"
-                  onClick={() => onInsertText(`SELECT * FROM ${table.name} LIMIT 50;`)}
+                  onClick={() =>
+                    onInsertText(`SELECT * FROM ${table.name} LIMIT 50;`)
+                  }
                 >
                   {table.name}
                 </button>
@@ -117,9 +150,15 @@ function SchemaExplorerComponent({
                     >
                       <span className="truncate">{column.name}</span>
                       <span className="ml-2 flex items-center gap-1">
-                        <span className="text-muted-foreground">{column.type || "?"}</span>
-                        {column.pk ? <Badge variant="secondary">PK</Badge> : null}
-                        {column.notnull ? <Badge variant="outline">NOT NULL</Badge> : null}
+                        <span className="text-muted-foreground">
+                          {column.type || "?"}
+                        </span>
+                        {column.pk ? (
+                          <Badge variant="secondary">PK</Badge>
+                        ) : null}
+                        {column.notnull ? (
+                          <Badge variant="outline">NOT NULL</Badge>
+                        ) : null}
                       </span>
                     </button>
                   ))}

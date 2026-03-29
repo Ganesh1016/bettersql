@@ -45,9 +45,8 @@ function EditorComponent({
   const handleMount = (instance: editor.IStandaloneCodeEditor) => {
     editorRef.current = instance;
 
-    instance.addCommand(
-      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-      () => onRun(),
+    instance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () =>
+      onRun(),
     );
     instance.addCommand(
       monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF,

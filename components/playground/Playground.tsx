@@ -1,6 +1,14 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import {
   Group as PanelGroup,
   Panel,
@@ -106,7 +114,13 @@ export function Playground() {
 
   // Handle file persistence (auto-save to localStorage if enabled)
   useEffect(() => {
-    if (mode === "file" && filePath && filePersistenceEnabled && result && !result.error) {
+    if (
+      mode === "file" &&
+      filePath &&
+      filePersistenceEnabled &&
+      result &&
+      !result.error
+    ) {
       // In a real app, we'd need to get the current DB bytes from the server action
       // since the file mode runs on the server. For this prototype, we'll focus
       // on the Instant mode persistence which is already implemented.
@@ -144,7 +158,13 @@ export function Playground() {
     });
   };
 
-  const refreshSchemaCallback = useCallback(refreshSchema, [mode, filePath, setConnected, setSchema, setResult]);
+  const refreshSchemaCallback = useCallback(refreshSchema, [
+    mode,
+    filePath,
+    setConnected,
+    setSchema,
+    setResult,
+  ]);
 
   const executeQuery = () => {
     const selection = editorApiRef.current?.getSelection();
@@ -298,9 +318,7 @@ export function Playground() {
           <SchemaExplorer
             tables={schema}
             collapsed={schemaCollapsed}
-            onToggleCollapsed={() =>
-              setSchemaCollapsed((value) => !value)
-            }
+            onToggleCollapsed={() => setSchemaCollapsed((value) => !value)}
             onRefresh={refreshSchemaCallback}
             onInsertText={(text) =>
               editorApiRef.current?.insertAtCursor(`${text}`)
