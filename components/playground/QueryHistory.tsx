@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Clock3, Eraser } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,11 @@ function truncateSql(sql: string) {
   return `${singleLine.slice(0, 72)}...`;
 }
 
-export function QueryHistory({ entries, onLoad, onClear }: QueryHistoryProps) {
+function QueryHistoryComponent({
+  entries,
+  onLoad,
+  onClear,
+}: QueryHistoryProps) {
   return (
     <div className="flex h-full flex-col rounded-md border border-border shadow-sm">
       <div className="flex items-center justify-between border-b border-border p-2">
@@ -37,10 +42,13 @@ export function QueryHistory({ entries, onLoad, onClear }: QueryHistoryProps) {
               className="w-full rounded-md border border-border p-2 text-left hover:bg-accent"
               onClick={() => onLoad(entry.sql)}
             >
-              <p className="truncate font-mono text-xs">{truncateSql(entry.sql)}</p>
+              <p className="truncate font-mono text-xs">
+                {truncateSql(entry.sql)}
+              </p>
               <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                 <Clock3 className="h-3 w-3" />
-                {new Date(entry.timestamp).toLocaleString()} • {entry.rowCount} rows
+                {new Date(entry.timestamp).toLocaleString()} • {entry.rowCount}{" "}
+                rows
               </p>
             </button>
           ))}
@@ -53,3 +61,4 @@ export function QueryHistory({ entries, onLoad, onClear }: QueryHistoryProps) {
   );
 }
 
+export const QueryHistory = memo(QueryHistoryComponent);
